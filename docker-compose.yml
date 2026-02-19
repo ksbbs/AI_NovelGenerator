@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  ai-novel-generator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-novel-generator
+    ports:
+      - "8000:8000"
+    volumes:
+      - novel-data:/app/data
+    environment:
+      - DATA_DIR=/app/data
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  novel-data:
+    driver: local

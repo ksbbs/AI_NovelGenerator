@@ -1,0 +1,239 @@
+/* api/static/css/style.css
+ * AI Novel Generator - Custom Styles
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 基础样式 */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #27272a;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #52525b;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #71717a;
+}
+
+/* 自定义输入框样式 */
+input[type="text"],
+input[type="number"],
+textarea,
+select {
+    transition: all 0.2s ease;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.2);
+}
+
+/* 按钮悬停效果 */
+button {
+    transition: all 0.2s ease;
+}
+
+button:hover {
+    transform: translateY(-1px);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+/* 对话框背景 */
+.dialog-overlay {
+    backdrop-filter: blur(4px);
+}
+
+/* 文本选择颜色 */
+::selection {
+    background: rgba(34, 211, 238, 0.3);
+    color: white;
+}
+
+/* 禁用状态 */
+:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 加载动画 */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* 呼吸动画 */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* 渐入动画 */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* 表格样式 */
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th,
+td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #52525b;
+}
+
+th {
+    background-color: #27272a;
+    font-weight: 600;
+    color: #a1a1aa;
+}
+
+tr:hover {
+    background-color: #3f3f46;
+}
+
+/* 代码块 */
+pre {
+    background-color: #18181b;
+    border: 1px solid #3f3f46;
+    border-radius: 4px;
+    padding: 12px;
+    overflow-x: auto;
+}
+
+code {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9em;
+}
+
+/* 工具提示 */
+.tooltip {
+    position: relative;
+}
+
+.tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px 8px;
+    background-color: #18181b;
+    color: #f4f4f5;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    border-radius: 4px;
+}
+
+.tooltip:hover::after {
+    opacity: 1;
+}
+
+/* 徽章 */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.badge-primary {
+    background-color: rgba(34, 211, 238, 0.2);
+    color: #22d3ee;
+}
+
+.badge-success {
+    background-color: rgba(52, 211, 153, 0.2);
+    color: #34d399;
+}
+
+.badge-warning {
+    background-color: rgba(250, 204, 21, 0.2);
+    color: #facc15;
+}
+
+.badge-error {
+    background-color: rgba(248, 113, 113, 0.2);
+    color: #f87171;
+}
+
+/* 网格布局增强 */
+.grid-responsive {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+/* 响应式 */
+@media (max-width: 640px) {
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .grid-responsive {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .lg\:col-span-8 {
+        grid-column: span 12;
+    }
+
+    .lg\:col-span-4 {
+        grid-column: span 12;
+    }
+}

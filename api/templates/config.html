@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-cyan-400 flex items-center">
+            <svg class="w-8 h-8 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+            配置管理
+        </h1>
+        <p class="text-zinc-400 mt-1">配置 LLM、Embedding 和系统参数</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- LLM 配置 -->
+        <div class="bg-zinc-800 rounded-lg p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-cyan-400">LLM 配置</h2>
+                <button onclick="showLLMConfigForm()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-1 px-4 rounded text-sm transition-all">
+                    + 新增配置
+                </button>
+            </div>
+            <div id="llmConfigList" class="space-y-2">
+                {% for name, config in config.llm_configs.items() %}
+                <div class="bg-zinc-700 rounded p-3" data-name="{{ name }}">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="font-medium text-white">{{ name }}</span>
+                            <span class="text-zinc-400 text-sm ml-2">{{ config.model_name }}</span>
+                        </div>
+                        <button onclick="deleteLLMConfig('{{ name }}')" class="text-red-400 hover:text-red-300 text-sm">
+                            删除
+                        </button>
+                    </div>
+                    <div class="text-zinc-400 text-sm mt-1">
+                        {{ config.base_url }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Embedding 配置 -->
+        <div class="bg-zinc-800 rounded-lg p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-cyan-400">Embedding 配置</h2>
+                <button onclick="showEmbeddingConfigForm()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-1 px-4 rounded text-sm transition-all">
+                    + 新增配置
+                </button>
+            </div>
+            <div id="embeddingConfigList" class="space-y-2">
+                {% for name, config in config.embedding_configs.items() %}
+                <div class="bg-zinc-700 rounded p-3" data-name="{{ name }}">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="font-medium text-white">{{ name }}</span>
+                            <span class="text-zinc-400 text-sm ml-2">{{ config.model_name }}</span>
+                        </div>
+                        <button onclick="deleteEmbeddingConfig('{{ name }}')" class="text-red-400 hover:text-red-300 text-sm">
+                            删除
+                        </button>
+                    </div>
+                    <div class="text-zinc-400 text-sm mt-1">
+                        {{ config.base_url }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 配置选择 -->
+        <div class="bg-zinc-800 rounded-lg p-6">
+            <h2 class="text-lg font-semibold text-cyan-400 mb-4">配置映射</h2>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-zinc-400 text-sm mb-1">架构生成 LLM</label>
+                    <select id="chooseArchLLM" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors" onchange="updateChooseConfig('architecture_llm', this.value)">
+                        {% for name in config.llm_configs.keys() %}
+                        <option value="{{ name }}" {{ 'selected' if config.choose_configs.get('architecture_llm') == name or (loop.first and not config.choose_configs.get('architecture_llm')) else '' }}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-zinc-400 text-sm mb-1">章节提纲 LLM</label>
+                    <select id="chooseOutlineLLM" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors" onchange="updateChooseConfig('chapter_outline_llm', this.value)">
+                        {% for name in config.llm_configs.keys() %}
+                        <option value="{{ name }}" {{ 'selected' if config.choose_configs.get('chapter_outline_llm') == name or (loop.first and not config.choose_configs.get('chapter_outline_llm')) else '' }}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-zinc-400 text-sm mb-1">草稿生成 LLM</label>
+                    <select id="chooseDraftLLM" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors" onchange="updateChooseConfig('prompt_draft_llm', this.value)">
+                        {% for name in config.llm_configs.keys() %}
+                        <option value="{{ name }}" {{ 'selected' if config.choose_configs.get('prompt_draft_llm') == name or (loop.first and not config.choose_configs.get('prompt_draft_llm')) else '' }}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-zinc-400 text-sm mb-1">定稿 LLM</label>
+                    <select id="chooseFinalLLM" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors" onchange="updateChooseConfig('final_chapter_llm', this.value)">
+                        {% for name in config.llm_configs.keys() %}
+                        <option value="{{ name }}" {{ 'selected' if config.choose_configs.get('final_chapter_llm') == name or (loop.first and not config.choose_configs.get('final_chapter_llm')) else '' }}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-zinc-400 text-sm mb-1">一致性检查 LLM</label>
+                    <select id="chooseConsistencyLLM" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors" onchange="updateChooseConfig('consistency_review_llm', this.value)">
+                        {% for name in config.llm_configs.keys() %}
+                        <option value="{{ name }}" {{ 'selected' if config.choose_configs.get('consistency_review_llm') == name or (loop.first and not config.choose_configs.get('consistency_review_llm')) else '' }}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-zinc-400 text-sm mb-1">Embedding 模型</label>
+                    <select id="chooseEmbedding" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors" onchange="updateChooseConfig('embedding_default', this.value)">
+                        {% for name in config.embedding_configs.keys() %}
+                        <option value="{{ name }}" {{ 'selected' if config.choose_configs.get('embedding_default') == name or (loop.first and not config.choose_configs.get('embedding_default')) else '' }}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- 代理配置 -->
+        <div class="bg-zinc-800 rounded-lg p-6">
+            <h2 class="text-lg font-semibold text-cyan-400 mb-4">代理配置</h2>
+            <div class="space-y-3">
+                <label class="flex items-center text-zinc-300">
+                    <input type="checkbox" id="proxyEnabled" {{ 'checked' if config.proxy_setting.enabled else '' }} class="mr-2">
+                    启用代理
+                </label>
+                <input type="text" id="proxyUrl" value="{{ config.proxy_setting.proxy_url }}" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors" placeholder="代理地址 (例如: 127.0.0.1)">
+                <input type="text" id="proxyPort" value="{{ config.proxy_setting.proxy_port }}" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors" placeholder="代理端口 (例如: 7890)">
+                <button onclick="saveProxyConfig()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-4 rounded transition-all">
+                    保存代理配置
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- LLM 配置表单对话框 -->
+<div id="llmConfigDialog" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-zinc-800 rounded-lg p-6 w-full max-w-lg">
+        <h3 class="text-lg font-semibold mb-4 text-white">新增 LLM 配置</h3>
+        <div class="space-y-3">
+            <input type="text" id="llmConfigName" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors" placeholder="配置名称 (例如: GPT-4)">
+            <select id="llm InterfaceFormat" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors">
+                <option value="OpenAI">OpenAI</option>
+                <option value="DeepSeek">DeepSeek</option>
+                <option value="Gemini">Gemini</option>
+                <option value="Ollama">Ollama</option>
+                <option value="AzureOpenAI">Azure OpenAI</option>
+            </select>
+            <input type="text" id="llmApiKey" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors" placeholder="API Key">
+            <input type="text" id="llmBaseUrl" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors" placeholder="Base URL (例如: https://api.openai.com/v1)">
+            <input type="text" id="llmModelName" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors" placeholder="模型名称 (例如: gpt-4)">
+            <div class="grid grid-cols-2 gap-2">
+                <input type="number" id="llmTemperature" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors" placeholder="温度 (默认: 0.7)" step="0.1" min="0" max="2">
+                <input type="number" id="llmMaxTokens" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors" placeholder="最大 Token" value="8192">
+            </div>
+        </div>
+        <div class="flex justify-end space-x-2 mt-4">
+            <button onclick="hideLLMConfigForm()" class="bg-zinc-600 hover:bg-zinc-700 text-white py-2 px-4 rounded transition-all">取消</button>
+            <button onclick="saveLLMConfig()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-4 rounded transition-all">保存</button>
+        </div>
+    </div>
+</div>
+
+<!-- Embedding 配置表单对话框 -->
+<div id="embeddingConfigDialog" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-zinc-800 rounded-lg p-6 w-full max-w-lg">
+        <h3 class="text-lg font-semibold mb-4 text-white">新增 Embedding 配置</h3>
+        <div class="space-y-3">
+            <input type="text" id="embeddingConfigName" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors" placeholder="配置名称 (例如: OpenAI Embedding)">
+            <select id="embeddingInterfaceFormat" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors">
+                <option value="OpenAI">OpenAI</option>
+                <option value="Ollama">Ollama</option>
+                <option value="Gemini">Gemini</option>
+                <option value="AzureOpenAI">Azure OpenAI</option>
+            </select>
+            <input type="text" id="embeddingApiKey" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors" placeholder="API Key">
+            <input type="text" id="embeddingBaseUrl" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors" placeholder="Base URL">
+            <input type="text" id="embeddingModelName" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors" placeholder="模型名称 (例如: text-embedding-ada-002)">
+            <input type="number" id="embeddingRetrievalK" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors" placeholder="检索数量 K (默认: 4)" value="4" min="1" max="10">
+        </div>
+        <div class="flex justify-end space-x-2 mt-4">
+            <button onclick="hideEmbeddingConfigForm()" class="bg-zinc-600 hover:bg-zinc-700 text-white py-2 px-4 rounded transition-all">取消</button>
+            <button onclick="saveEmbeddingConfig()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-4 rounded transition-all">保存</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 配置管理相关函数
+function showLLMConfigForm() {
+    document.getElementById('llmConfigDialog').classList.remove('hidden');
+    document.getElementById('llmConfigDialog').classList.add('flex');
+}
+
+function hideLLMConfigForm() {
+    document.getElementById('llmConfigDialog').classList.add('hidden');
+    document.getElementById('llmConfigDialog').classList.remove('flex');
+}
+
+async function saveLLMConfig() {
+    const baseURL = new URL(window.location.href).origin;
+    const response = await fetch(`${baseURL}/api/config/llm`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            name: document.getElementById('llmConfigName').value,
+            interface_format: document.getElementById('llm InterfaceFormat').value,
+            api_key: document.getElementById('llmApiKey').value,
+            base_url: document.getElementById('llmBaseUrl').value,
+            model_name: document.getElementById('llmModelName').value,
+            temperature: parseFloat(document.getElementById('llmTemperature').value) || 0.7,
+            max_tokens: parseInt(document.getElementById('llmMaxTokens').value) || 8192,
+            timeout: 600
+        })
+    });
+    const result = await response.json();
+    log(result.message);
+    if (result.status === 'success') {
+        location.reload();
+    }
+}
+
+async function deleteLLMConfig(name) {
+    if (!confirm(`确定要删除 LLM 配置 "${name}" 吗?`)) return;
+    const baseURL = new URL(window.location.href).origin;
+    const response = await fetch(`${baseURL}/api/config/llm/${name}`, {method: 'DELETE'});
+    const result = await response.json();
+    log(result.message);
+    if (result.status === 'success') {
+        location.reload();
+    }
+}
+
+function showEmbeddingConfigForm() {
+    document.getElementById('embeddingConfigDialog').classList.remove('hidden');
+    document.getElementById('embeddingConfigDialog').classList.add('flex');
+}
+
+function hideEmbeddingConfigForm() {
+    document.getElementById('embeddingConfigDialog').classList.add('hidden');
+    document.getElementById('embeddingConfigDialog').classList.remove('flex');
+}
+
+async function saveEmbeddingConfig() {
+    const baseURL = new URL(window.location.href).origin;
+    const response = await fetch(`${baseURL}/api/config/embedding`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            name: document.getElementById('embeddingConfigName').value,
+            interface_format: document.getElementById('embeddingInterfaceFormat').value,
+            api_key: document.getElementById('embeddingApiKey').value,
+            base_url: document.getElementById('embeddingBaseUrl').value,
+            model_name: document.getElementById('embeddingModelName').value,
+            retrieval_k: parseInt(document.getElementById('embeddingRetrievalK').value) || 4
+        })
+    });
+    const result = await response.json();
+    log(result.message);
+    if (result.status === 'success') {
+        location.reload();
+    }
+}
+
+async function deleteEmbeddingConfig(name) {
+    if (!confirm(`确定要删除 Embedding 配置 "${name}" 吗?`)) return;
+    const baseURL = new URL(window.location.href).origin;
+    const response = await fetch(`${baseURL}/api/config/embedding/${name}`, {method: 'DELETE'});
+    const result = await response.json();
+    log(result.message);
+    if (result.status === 'success') {
+        location.reload();
+    }
+}
+
+async function updateChooseConfig(key, value) {
+    const baseURL = new URL(window.location.href).origin;
+    await fetch(`${baseURL}/api/config/choose`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({[key]: value})
+    });
+}
+
+async function saveProxyConfig() {
+    const baseURL = new URL(window.location.href).origin;
+    await fetch(`${baseURL}/api/config/save`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            proxy_setting: {
+                enabled: document.getElementById('proxyEnabled').checked,
+                proxy_url: document.getElementById('proxyUrl').value,
+                proxy_port: document.getElementById('proxyPort').value
+            }
+        })
+    });
+    log('代理配置已保存');
+}
+</script>
+{% endblock %}

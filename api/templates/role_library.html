@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-cyan-400 flex items-center">
+            <svg class="w-8 h-8 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+            角色库
+        </h1>
+        <p class="text-zinc-400 mt-1">路径: <span class="text-zinc-200">{{ filepath }}</span></p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- 分类列表 -->
+        <div class="bg-zinc-800 rounded-lg p-4">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-cyan-400">角色分类</h2>
+                <button onclick="showCreateCategoryDialog()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-1 px-3 rounded text-sm transition-all">
+                    + 新建
+                </button>
+            </div>
+            <div id="categoryList" class="space-y-1">
+                {% for category, role_list in roles.items() %}
+                <div class="category-item bg-zinc-700 rounded p-2 cursor-pointer hover:bg-zinc-600 transition-colors" data-category="{{ category }}">
+                    <div class="flex items-center justify-between">
+                        <span class="text-white">{{ category }}</span>
+                        <span class="text-zinc-400 text-sm">{{ role_list|length }} <span class="hidden sm:inline">个角色</span></span>
+                    </div>
+                </div>
+                {% endfor %}
+                {% if not roles %}
+                <div class="text-center py-4 text-zinc-400">
+                   暂无分类，请点击"新建"添加
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 角色列表 -->
+        <div class="lg:col-span-2 bg-zinc-800 rounded-lg p-4">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-cyan-400">
+                    角色列表
+                    <span id="currentCategory" class="text-zinc-400 text-sm ml-2">- 未选择分类</span>
+                </h2>
+                <a href="/" class="bg-zinc-600 hover:bg-zinc-700 text-white py-2 px-4 rounded transition-all">
+                    ↩️ 返回
+                </a>
+            </div>
+
+            <div id="roleList" class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                <div class="text-center py-8 text-zinc-400 col-span-full">
+                    请先选择一个角色分类
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 角色编辑对话框 -->
+<div id="roleEditorDialog" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-zinc-800 rounded-lg p-6 w-full max-w-2xl">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-white" id="roleEditorTitle"> 编辑角色</h3>
+            <button onclick="hideRoleEditor()" class="text-zinc-400 hover:text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="mb-4">
+            <input type="hidden" id="editingCategory">
+            <input type="hidden" id="editingRoleName">
+            <input type="hidden" id="originalRoleName">
+            <input type="text" id="roleNameInput" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors" placeholder="角色名称">
+        </div>
+        <div class="mb-4">
+            <textarea id="roleContentInput" rows="10" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors resize-none" placeholder="角色描述/设定内容..."></textarea>
+        </div>
+        <div class="flex justify-end space-x-2">
+            <button onclick="hideRoleEditor()" class="bg-zinc-600 hover:bg-zinc-700 text-white py-2 px-4 rounded transition-all">取消</button>
+            <button onclick="saveRole()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-4 rounded transition-all">保存</button>
+        </div>
+    </div>
+</div>
+
+<!-- 新建分类对话框 -->
+<div id="categoryDialog" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-zinc-800 rounded-lg p-6 w-full max-w-md">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-white">新建角色分类</h3>
+            <button onclick="hideCreateCategoryDialog()" class="text-zinc-400 hover:text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="mb-4">
+            <input type="text" id="categoryNameInput" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors" placeholder="分类名称 (例如: 主角、配角)">
+        </div>
+        <div class="flex justify-end space-x-2">
+            <button onclick="hideCreateCategoryDialog()" class="bg-zinc-600 hover:bg-zinc-700 text-white py-2 px-4 rounded transition-all">取消</button>
+            <button onclick="createCategory()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-4 rounded transition-all">创建</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let rolesData = {{ roles | tojson }};
+let currentCategory = null;
+let currentRole = null;
+
+// 初始化分类点击事件
+document.querySelectorAll('.category-item').forEach(item => {
+    item.addEventListener('click', function() {
+        const category = this.dataset.category;
+        selectCategory(category);
+    });
+});
+
+function selectCategory(category) {
+    currentCategory = category;
+    document.getElementById('currentCategory').textContent = `- ${category}`;
+
+    // 更新分类高亮
+    document.querySelectorAll('.category-item').forEach(item => {
+        item.classList.remove('bg-cyan-600');
+        item.classList.add('bg-zinc-700');
+    });
+    document.querySelector(`.category-item[data-category="${category}"]`).classList.remove('bg-zinc-700');
+    document.querySelector(`.category-item[data-category="${category}"]`).classList.add('bg-cyan-600');
+
+    // 显示角色列表
+    const roleList = document.getElementById('roleList');
+    const roles = rolesData[category] || [];
+
+    if (roles.length === 0) {
+        roleList.innerHTML = `
+            <div class="text-center py-8 text-zinc-400 col-span-full">
+                该分类下暂无角色
+                <button onclick="showRoleEditor()" class="ml-2 bg-emerald-600 hover:bg-emerald-700 text-white py-1 px-3 rounded text-sm">新建角色</button>
+            </div>
+        `;
+    } else {
+        roleList.innerHTML = roles.map(roleName => `
+            <div class="bg-zinc-700 rounded p-3 hover:bg-zinc-600 transition-colors cursor-pointer" onclick="showRoleEditor('${roleName}')">
+                <div class="text-white font-medium">${roleName}</div>
+            </div>
+        `).join('');
+    }
+}
+
+function showCreateCategoryDialog() {
+    document.getElementById('categoryDialog').classList.remove('hidden');
+    document.getElementById('categoryDialog').classList.add('flex');
+    document.getElementById('categoryNameInput').focus();
+}
+
+function hideCreateCategoryDialog() {
+    document.getElementById('categoryDialog').classList.add('hidden');
+    document.getElementById('categoryDialog').classList.remove('flex');
+    document.getElementById('categoryNameInput').value = '';
+}
+
+async function createCategory() {
+    const categoryName = document.getElementById('categoryNameInput').value.trim();
+    if (!categoryName) return;
+
+    const baseURL = new URL(window.location.href).origin;
+    const response = await fetch(`${baseURL}/api/role-library/create-category`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            filepath: '{{ filepath }}',
+            category: categoryName
+        })
+    });
+    const result = await response.json();
+    if (result.status === 'success') {
+        rolesData[categoryName] = [];
+        location.reload();
+    }
+}
+
+function showRoleEditor(roleName = null) {
+    currentRole = roleName;
+    document.getElementById('roleEditorDialog').classList.remove('hidden');
+    document.getElementById('roleEditorDialog').classList.add('flex');
+
+    document.getElementById('editingCategory').value = currentCategory;
+    document.getElementById('editingRoleName').value = roleName || '';
+    document.getElementById('originalRoleName').value = roleName || '';
+    document.getElementById('roleNameInput').value = roleName || '';
+    document.getElementById('roleContentInput').value = '';
+
+    if (roleName) {
+        document.getElementById('roleEditorTitle').textContent = `编辑角色 - ${roleName}`;
+        loadRoleContent(roleName);
+    } else {
+        document.getElementById('roleEditorTitle').textContent = '新建角色';
+    }
+}
+
+function hideRoleEditor() {
+    document.getElementById('roleEditorDialog').classList.add('hidden');
+    document.getElementById('roleEditorDialog').classList.remove('flex');
+    currentRole = null;
+}
+
+async function loadRoleContent(roleName) {
+    const baseURL = new URL(window.location.href).origin;
+    const response = await fetch(`${baseURL}/api/role-library/content?filepath={{ filepath }}&category=${encodeURIComponent(currentCategory)}&role_name=${encodeURIComponent(roleName)}`);
+    const result = await response.json();
+    if (result.status === 'success') {
+        document.getElementById('roleContentInput').value = result.content;
+    }
+}
+
+async function saveRole() {
+    const baseURL = new URL(window.location.href).origin;
+    const roleName = document.getElementById('roleNameInput').value.trim();
+    const content = document.getElementById('roleContentInput').value;
+
+    // 如果改变了角色名称，需要先删除旧文件
+    const originalName = document.getElementById('originalRoleName').value;
+    if (originalName && originalName !== roleName && originalName !== '') {
+        await deleteRoleInternal(originalName);
+    }
+
+    const response = await fetch(`${baseURL}/api/role-library/save`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            filepath: '{{ filepath }}',
+            category: currentCategory,
+            role_name: roleName,
+            content: content
+        })
+    });
+    const result = await response.json();
+    if (result.status === 'success') {
+        log(`角色 "${roleName}" 已保存`);
+        hideRoleEditor();
+        location.reload();
+    }
+}
+
+function deleteRole(roleName) {
+    if (!confirm(`确定要删除角色 "${roleName}" 吗?`)) return;
+
+    deleteRoleInternal(roleName);
+    location.reload();
+}
+
+async function deleteRoleInternal(roleName) {
+    const baseURL = new URL(window.location.href).origin;
+    await fetch(`${baseURL}/api/role-library/role?filepath={{ filepath }}&category=${encodeURIComponent(currentCategory)}&role_name=${encodeURIComponent(roleName)}`, {
+        method: 'DELETE'
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-cyan-400 flex items-center">
+            <svg class="w-8 h-8 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+            </svg>
+            小说设定
+        </h1>
+        <p class="text-zinc-400 mt-1">路径: <span class="text-zinc-200">{{ filepath }}</span></p>
+    </div>
+
+    <div class="bg-zinc-800 rounded-lg p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-cyan-400">Novel Architecture</h2>
+            <div class="flex items-center space-x-2">
+                <button onclick="saveFile('Novel_architecture.txt')" class="bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-4 rounded transition-all">
+                    💾 保存
+                </button>
+                <a href="/" class="bg-zinc-600 hover:bg-zinc-700 text-white py-2 px-4 rounded transition-all">
+                    ↩️ 返回
+                </a>
+            </div>
+        </div>
+        <textarea id="fileContent" class="w-full h-[50rem] bg-zinc-900 text-zinc-100 border border-zinc-700 rounded p-4 leading-relaxed resize-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors font-mono text-sm">{{ content or '' }}</textarea>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentFilename = 'Novel_architecture.txt';
+
+async function saveFile(filename) {
+    currentFilename = filename;
+    const content = document.getElementById('fileContent').value;
+    const baseURL = new URL(window.location.href).origin;
+
+    const response = await fetch(`${baseURL}/api/file/save`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            filepath: '{{ filepath }}',
+            filename: filename,
+            content: content
+        })
+    });
+    const result = await response.json();
+    log(result.message);
+}
+</script>
+{% endblock %}

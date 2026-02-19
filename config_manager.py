@@ -7,8 +7,14 @@ from llm_adapters import create_llm_adapter
 from embedding_adapters import create_embedding_adapter
 
 
-def load_config(config_file: str) -> dict:
+def load_config(config_file: str = None) -> dict:
     """从指定的 config_file 加载配置，若不存在则创建一个默认配置文件。"""
+    import os
+
+    # 如果没有指定配置文件，使用 DATA_DIR 环境变量中的路径
+    if config_file is None:
+        data_dir = os.getenv("DATA_DIR", "/app/data")
+        config_file = os.path.join(data_dir, "config.json")
 
     # PenBo 修改代码，增加配置文件不存在则创建一个默认配置文件
     if not os.path.exists(config_file):

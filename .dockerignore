@@ -1,0 +1,70 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# 虚拟环境
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# 日志
+*.log
+app.log
+partial_architecture.json
+
+# 生成的数据（通过 volume 挂载）
+chapters/
+vectorstore/
+角色库/
+
+# GUI 文件（不需要）
+ui/
+main.spec
+icon.ico
+
+# 数据文件
+config.json
+plot_arcs.txt
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# GitHub
+.github/
+
+# 文档
+README.md
+READMEEN.md
+CLAUDE.md
+LICENSE
+
+# 开发配置
+.env
+.env.local
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# 其他
+*.tmp
+*.bak
+.temp/

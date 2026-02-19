@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Novel Generator</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="bg-zinc-900 text-zinc-100 min-h-screen">
+    <!-- 顶部导航栏 -->
+    <nav class="bg-zinc-800 border-b border-zinc-700">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-6">
+                    <a href="/" class="text-xl font-bold text-cyan-400">📝 AI Novel Generator</a>
+                    <a href="/config" class="text-zinc-300 hover:text-white transition-colors">⚙️ 配置</a>
+                    {% if config.other_params.filepath %}
+                    <a href="/role_library/{{ config.other_params.filepath }}" class="text-zinc-300 hover:text-white transition-colors">👥 角色库</a>
+                    {% endif %}
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="text-zinc-400 text-sm">数据目录: <span id="dataDir">/app/data</span></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主体内容 -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- 底部状态栏 -->
+    <footer class="bg-zinc-800 border-t border-zinc-700 mt-8">
+        <div class="container mx-auto px-4 py-3">
+            <div id="statusBar" class="flex items-center justify-between text-sm text-zinc-400">
+                <span id="systemStatus">系统就绪</span>
+                <span>AI Novel Generator v2.0.0</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 通用脚本 -->
+    <script src="/static/js/app.js"></script>
+    <script>
+        // 全局配置
+        window.API_BASE = '/api';
+        window.CURRENT_FILEPATH = '{{ config.other_params.filepath or "" }}';
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initApp();
+        });
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

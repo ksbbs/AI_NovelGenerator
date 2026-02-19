@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-cyan-400 flex items-center">
+            <svg class="w-8 h-8 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+            </svg>
+            章节列表
+        </h1>
+        <p class="text-zinc-400 mt-1">路径: <span class="text-zinc-200">{{ filepath }}</span> - 共 <span class="text-cyan-400">{{ chapters|length }}</span> 章</p>
+    </div>
+
+    <div class="bg-zinc-800 rounded-lg p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-cyan-400">所有章节</h2>
+            <a href="/" class="bg-zinc-600 hover:bg-zinc-700 text-white py-2 px-4 rounded transition-all">
+                ↩️ 返回
+            </a>
+        </div>
+
+        {% if chapters %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {% for chapter in chapters %}
+            <div class="bg-zinc-700 rounded-lg p-4 hover:bg-zinc-600 transition-colors">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="font-semibold text-white">第 {{ chapter.num }} 章</span>
+                    <span class="text-zinc-400 text-sm">{{ chapter.file }}</span>
+                </div>
+                <div class="flex space-x-2 mt-3">
+                    <button onclick="loadChapter({{ chapter.num }})" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-1 px-2 rounded text-sm transition-all">
+                        查看
+                    </button>
+                    <button onclick="deleteChapter({{ chapter.num }})" class="bg-red-600 hover:bg-red-700 text-white py-1 px-2 rounded text-sm transition-all">
+                        删除
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-12 text-zinc-400">
+            <svg class="w-16 h-16 mx-auto mb-4 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            <p class="text-lg">暂无章节</p>
+            <p class="text-sm mt-2">请先生成小说架构和章节目录</p>
+            <a href="/" class="inline-block mt-4 bg-cyan-600 hover:bg-cyan-700 text-white py-2 px-6 rounded transition-all">
+                前往生成页面
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadChapter(chapterNum) {
+    window.location.href = `/chapter/{{ filepath }}/${chapterNum}`;
+}
+
+async function deleteChapter(chapterNum) {
+    if (!confirm(`确定要删除第 ${chapterNum} 章吗?`)) return;
+    const baseURL = new URL(window.location.href).origin;
+    await fetch(`${baseURL}/api/file/delete`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            filepath: '{{ filepath }}',
+            filename: `chapters/chapter_${chapterNum}.txt`
+        })
+    });
+    log(`第 ${chapterNum} 章已删除`);
+    location.reload();
+}
+</script>
+{% endblock %}

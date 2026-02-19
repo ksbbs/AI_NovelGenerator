@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- 左侧主体区域 (8列) -->
+        <div class="lg:col-span-8 space-y-4">
+            <!-- 状态栏 -->
+            <div class="bg-zinc-800 rounded-lg p-4 flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <span class="text-zinc-400">当前章节:</span>
+                    <span id="currentChapter" class="text-cyan-400 font-semibold">-</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-zinc-400">字数:</span>
+                    <span id="wordCount" class="text-emerald-400 font-semibold">0</span>
+                    <span class="text-zinc-400">字</span>
+                </div>
+                <div id="taskIndicator" class="hidden">
+                    <span class="flex items-center text-yellow-400">
+                        <svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        <span id="taskMessage">处理中...</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- 生成按钮组 -->
+            <div class="bg-zinc-800 rounded-lg p-4">
+                <div class="grid grid-cols-6 gap-2">
+                    <button onclick="generateArchitecture()" class="bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-white font-medium py-2 px-3 rounded transition-all">
+                        Step1. 生成架构
+                    </button>
+                    <button onclick="generateBlueprint()" class="bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-white font-medium py-2 px-3 rounded transition-all">
+                        Step2. 生成目录
+                    </button>
+                    <button onclick="buildChapterPrompt()" class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-medium py-2 px-3 rounded transition-all">
+                        Step3. 构建提示词
+                    </button>
+                    <button onclick="generateChapterDraft()" class="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-medium py-2 px-3 rounded transition-all">
+                        Step4. 生成草稿
+                    </button>
+                    <button onclick="finalizeChapter()" class="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-medium py-2 px-3 rounded transition-all">
+                        Step5. 定稿章节
+                    </button>
+                    <button onclick="showBatchDialog()" class="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white font-medium py-2 px-3 rounded transition-all">
+                        批量生成
+                    </button>
+                </div>
+
+                <!-- 提示词编辑区 -->
+                <div id="promptEditor" class="mt-4 hidden">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-zinc-400">当前章节提示词（可编辑）:</label>
+                        <span id="promptWordCount" class="text-zinc-500 text-sm">字数: 0</span>
+                    </div>
+                    <textarea id="promptText" class="w-full h-64 bg-zinc-900 text-zinc-100 border border-zinc-700 rounded p-3 font-mono text-sm resize-none"></textarea>
+                    <div class="flex items-center space-x-2 mt-2">
+                        <button onclick="usePromptForGeneration()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-1 px-4 rounded transition-all">
+                            使用此提示词生成
+                        </button>
+                        <button onclick="hidePromptEditor()" class="bg-zinc-600 hover:bg-zinc-700 text-white font-medium py-1 px-4 rounded transition-all">
+                            取消
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 章节编辑区 -->
+            <div class="bg-zinc-800 rounded-lg p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <label class="text-emerald-400 font-medium">章节内容</label>
+                    <button onclick="saveChapterContent()" class="text-sm bg-zinc-700 hover:bg-zinc-600 text-zinc-300 py-1 px-3 rounded transition-all">
+                        保存
+                    </button>
+                </div>
+                <textarea id="chapterContent" class="w-full h-[48rem] bg-zinc-900 text-zinc-100 border border-zinc-700 rounded p-4 leading-relaxed resize-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors" placeholder="在此编辑章节内容...">{{ content or '' }}</textarea>
+            </div>
+
+            <!-- 日志输出区 -->
+            <div class="bg-zinc-800 rounded-lg p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <label class="text-zinc-400">操作日志</label>
+                    <button onclick="clearLog()" class="text-zinc-500 hover:text-zinc-300 text-sm">清空</button>
+                </div>
+                <div id="logOutput" class="h-32 bg-zinc-900 border border-zinc-700 rounded p-3 font-mono text-sm overflow-y-auto text-zinc-400">
+                    <div class="text-emerald-400">系统启动完成，等待操作...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧参数面板 (4列) -->
+        <div class="lg:col-span-4 space-y-4">
+            <!-- 小说参数 -->
+            <div class="bg-zinc-800 rounded-lg p-4">
+                <h2 class="text-lg font-semibold mb-4 text-cyan-400 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                    </svg>
+                    小说参数
+                </h2>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-zinc-400 mb-1 text-sm">文件路径</label>
+                        <input type="text" id="filepath" value="{{ config.other_params.filepath or '' }}" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-zinc-400 mb-1 text-sm">主题</label>
+                        <textarea id="topic" rows="3" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors resize-none">{{ config.other_params.topic or '' }}</textarea>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-zinc-400 mb-1 text-sm">类型</label>
+                            <input type="text" id="genre" value="{{ config.other_params.genre or '玄幻' }}" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-zinc-400 mb-1 text-sm">章节数</label>
+                            <input type="number" id="numChapters" value="{{ config.other_params.num_chapters or 10 }}" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-zinc-400 mb-1 text-sm">每章字数</label>
+                            <input type="number" id="wordNumber" value="{{ config.other_params.word_number or 3000 }}" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-zinc-400 mb-1 text-sm">当前章节</label>
+                            <input type="number" id="chapterNum" value="{{ config.other_params.chapter_num or 1 }}" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-zinc-400 mb-1 text-sm">用户指导</label>
+                        <textarea id="userGuidance" rows="2" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors resize-none">{{ config.other_params.user_guidance or '' }}</textarea>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-zinc-400 mb-1 text-sm">涉及角色</label>
+                            <input type="text" id="charactersInvolved" value="{{ config.other_params.characters_involved or '' }}" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-zinc-400 mb-1 text-sm">关键道具</label>
+                            <input type="text" id="keyItems" value="{{ config.other_params.key_items or '' }}" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-zinc-400 mb-1 text-sm">场景位置</label>
+                            <input type="text" id="sceneLocation" value="{{ config.other_params.scene_location or '' }}" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-zinc-400 mb-1 text-sm">时间限制</label>
+                            <input type="text" id="timeConstraint" value="{{ config.other_params.time_constraint or '' }}" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors">
+                        </div>
+                    </div>
+                    <button onclick="saveParams()" class="w-full bg-gradient-to-r from-zinc-600 to-zinc-700 hover:from-zinc-500 hover:to-zinc-600 text-white font-medium py-2 px-4 rounded transition-all">
+                        保存参数
+                    </button>
+                </div>
+            </div>
+
+            <!-- 快速访问 -->
+            <div class="bg-zinc-800 rounded-lg p-4">
+                <h2 class="text-lg font-semibold mb-4 text-cyan-400 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7c0-2-1-3-3-3H7C5 4 4 5 4 7z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v6"></path>
+                    </svg>
+                    快速访问
+                </h2>
+                <div class="space-y-2">
+                    <a href="/setting/{{ config.other_params.filepath or '' }}" class="block bg-zinc-700 hover:bg-zinc-600 text-white py-2 px-3 rounded transition-all flex items-center">
+                        <span class="w-8">📜</span>小说设定
+                    </a>
+                    <a href="/directory/{{ config.other_params.filepath or '' }}" class="block bg-zinc-700 hover:bg-zinc-600 text-white py-2 px-3 rounded transition-all flex items-center">
+                        <span class="w-8">📋</span>章节目录
+                    </a>
+                    <a href="/character/{{ config.other_params.filepath or '' }}" class="block bg-zinc-700 hover:bg-zinc-600 text-white py-2 px-3 rounded transition-all flex items-center">
+                        <span class="w-8">👤</span>角色状态
+                    </a>
+                    <a href="/summary/{{ config.other_params.filepath or '' }}" class="block bg-zinc-700 hover:bg-zinc-600 text-white py-2 px-3 rounded transition-all flex items-center">
+                        <span class="w-8">📝</span>全局摘要
+                    </a>
+                    <a href="/chapters/{{ config.other_params.filepath or '' }}" class="block bg-zinc-700 hover:bg-zinc-600 text-white py-2 px-3 rounded transition-all flex items-center">
+                        <span class="w-8">📚</span>章节列表
+                    </a>
+                </div>
+            </div>
+
+            <!-- 辅助功能 -->
+            <div class="bg-zinc-800 rounded-lg p-4">
+                <h2 class="text-lg font-semibold mb-4 text-cyan-400 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    辅助功能
+                </h2>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="checkConsistency()" class="bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-3 rounded text-sm transition-all">
+                        检查一致性
+                    </button>
+                    <button onclick="enrichChapter()" class="bg-orange-600 hover:bg-orange-700 text-white py-2 px-3 rounded text-sm transition-all">
+                        扩写章节
+                    </button>
+                    <button onclick="showKnowledgeImport()" class="bg-teal-600 hover:bg-teal-700 text-white py-2 px-3 rounded text-sm transition-all">
+                        导入知识库
+                    </button>
+                    <button onclick="showVectorstoreClear()" class="bg-red-600 hover:bg-red-700 text-white py-2 px-3 rounded text-sm transition-all">
+                        清空向量库
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 批量生成对话框 -->
+<div id="batchDialog" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-zinc-800 rounded-lg p-6 w-full max-w-md">
+        <h3 class="text-lg font-semibold mb-4 text-white">批量生成章节</h3>
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div>
+                <label class="block text-zinc-400 mb-1 text-sm">起始章节</label>
+                <input type="number" id="batchStart" value="1" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors">
+            </div>
+            <div>
+                <label class="block text-zinc-400 mb-1 text-sm">结束章节</label>
+                <input type="number" id="batchEnd" value="5" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors">
+            </div>
+            <div>
+                <label class="block text-zinc-400 mb-1 text-sm">期望字数</label>
+                <input type="number" id="batchWordNumber" value="3000" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors">
+            </div>
+            <div>
+                <label class="block text-zinc-400 mb-1 text-sm">最低字数</label>
+                <input type="number" id="batchMinWord" value="3000" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors">
+            </div>
+        </div>
+        <div class="mb-4">
+            <label class="flex items-center text-zinc-300">
+                <input type="checkbox" id="batchAutoEnrich" checked class="mr-2">
+                低于最低字数时自动扩写
+            </label>
+        </div>
+        <div class="flex justify-end space-x-2">
+            <button onclick="hideBatchDialog()" class="bg-zinc-600 hover:bg-zinc-700 text-white py-2 px-4 rounded transition-all">
+                取消
+            </button>
+            <button onclick="executeBatchGenerate()" class="bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded transition-all">
+                开始生成
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 知识库导入对话框 -->
+<div id="knowledgeDialog" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-zinc-800 rounded-lg p-6 w-full max-w-lg">
+        <h3 class="text-lg font-semibold mb-4 text-white">导入知识库</h3>
+        <textarea id="knowledgeContent" rows="8" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-white mb-4 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors resize-none" placeholder="在此粘贴知识库内容..."></textarea>
+        <div class="flex justify-end space-x-2">
+            <button onclick="hideKnowledgeImport()" class="bg-zinc-600 hover:bg-zinc-700 text-white py-2 px-4 rounded transition-all">
+                取消
+            </button>
+            <button onclick="executeKnowledgeImport()" class="bg-teal-600 hover:bg-teal-700 text-white py-2 px-4 rounded transition-all">
+                导入
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 主页特定的脚本
+let currentPrompt = null;
+
+// 更新字数统计
+function updateWordCount() {
+    const content = document.getElementById('chapterContent').value;
+    document.getElementById('wordCount').textContent = content.length;
+}
+
+document.getElementById('chapterContent').addEventListener('input', updateWordCount);
+updateWordCount();
+
+// 章节内容变更时自动更新全局变量
+window.addEventListener('chapterContentChanged', function(e) {
+    log('📄 章节内容已更新，字数: ' + e.detail.wordCount);
+});
+</script>
+{% endblock %}
