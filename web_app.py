@@ -46,10 +46,18 @@ def auth_function(username: str, password: str) -> bool:
     return username == ADMIN_USERNAME and password == ADMIN_PASSWORD
 
 # ==================== 配置管理 ====================
-CONFIG_FILE = "config.json"
+# 支持从环境变量读取配置文件路径，用于 Docker 部署
+CONFIG_FILE = os.environ.get("CONFIG_PATH", "config.json")
+
+# 数据存储路径（持久化目录）
+DATA_DIR = os.environ.get("DATA_DIR", "/app/novels")
 
 def get_config() -> dict:
     """获取配置"""
+    # 确保配置文件目录存在
+    config_dir = os.path.dirname(CONFIG_FILE)
+    if config_dir and not os.path.exists(config_dir):
+        os.makedirs(config_dir, exist_ok=True)
     return load_config(CONFIG_FILE)
 
 def update_config(config_data: dict) -> str:

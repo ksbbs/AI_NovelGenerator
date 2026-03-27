@@ -1,0 +1,31 @@
+# Zeabur 部署配置
+# 文档: https://zeabur.com/docs
+
+services:
+  - name: ai-novel-generator
+    # 使用 GitHub Container Registry 镜像
+    image: ghcr.io/ksbbs/ai_novelgenerator:latest
+
+    # 端口配置
+    ports:
+      - 7860
+
+    # 环境变量
+    env:
+      APP_USERNAME: admin
+      APP_PASSWORD: ${APP_PASSWORD}
+      TZ: Asia/Shanghai
+
+    # 持久化存储卷
+    volumes:
+      - name: novels_data
+        mount_path: /app/novels
+      - name: vectorstore_data
+        mount_path: /app/vectorstore
+
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7860/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
