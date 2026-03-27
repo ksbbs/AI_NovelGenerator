@@ -47,6 +47,7 @@ novels/
 vectorstore/
 *.txt
 !requirements.txt
+!requirements-docker.txt
 
 # OS files
 .DS_Store
